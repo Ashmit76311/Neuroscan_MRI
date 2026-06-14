@@ -115,7 +115,49 @@ Dice coefficient is the primary segmentation metric here, since pixel accuracy i
 | **Dashboard** | Streamlit + Plotly | Upload scans, view segmentation masks, classification confidence, and Grad-CAM heatmaps |
 
 ---
+## 🛠️ Tech Stack
 
+### 🤖 Deep Learning & Machine Learning
+| Category | Technologies |
+|-----------|-------------|
+| Frameworks | TensorFlow v2.20.0, Keras v3.13.2 |
+| Computer Vision | OpenCV (opencv-python-headless), Pillow (PIL) |
+| Data Science | NumPy, pandas, scikit-learn |
+| Model Storage | h5py (HDF5/Keras model checkpoints) |
+
+### 🖥️ Application & API Layer
+| Category | Technologies |
+|-----------|-------------|
+| Web Dashboard | Streamlit v1.48.1 |
+| Backend API | FastAPI v0.109.0, Uvicorn |
+| Data Visualization | Plotly |
+
+### ⚙️ Tooling & Infrastructure
+| Category | Technologies |
+|-----------|-------------|
+| Containerization | Docker, Docker Compose |
+| Testing | pytest |
+| Configuration Management | YAML (PyYAML), python-dotenv (.env) |
+
+---
+
+### 🚀 Technology Overview
+
+<p align="left">
+  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Keras-D00000?style=for-the-badge&logo=keras&logoColor=white"/>
+  <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white"/>
+  <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white"/>
+  <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white"/>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Plotly-3F4F75?style=for-the-badge&logo=plotly&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
+  <img src="https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white"/>
+</p>
+
+---
 ## 🚀 Getting Started
 
 ### 1. Environment Setup
@@ -233,3 +275,9 @@ pytest tests/ -v
 - **Multimodal Fusion**: Integrate T1, T1Gd, T2, and FLAIR sequences simultaneously for richer feature extraction.
 - **Federated Learning**: Implement federated training to preserve patient data privacy across multiple clinical sites.
 - **Deployment**: Provide Kubernetes Helm charts for scalable enterprise deployment.
+
+---
+## 👤 Author
+
+**Ashmit Kumar Srivastav**  
+GitHub: [@Ashmit](https://github.com/Ashmit76311)
