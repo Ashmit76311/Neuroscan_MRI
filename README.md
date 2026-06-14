@@ -55,11 +55,17 @@ The pipeline takes a raw MRI scan, localizes the region of interest, classifies 
 
 ## 🖥️ Dashboard Preview
 
-![Dashboard Upload Screen](docs/dashboard_preview_2.png)
+![NeuroScan Control Panel](docs/dashboard2.png)
 *Upload an MRI scan to begin the autonomous workflow.*
 
-![Spatial Diagnostics and Explainability](docs/dashboard_preview_1.png)
-*View spatial diagnostics, probability distribution, and Grad-CAM heatmaps.*
+![Axial MRI Layer Scan](docs/dashboard4.png)
+*Raw MRI Scan and Segmentation Mask Overlay*
+
+![Region of Interest & Explainability](docs/dashboard1.png)
+*Isolated Region of Interest and Grad-CAM Model Focus*
+
+![Probability Distribution & Clinical Details](docs/dashboard3.png)
+*Confidence probability distribution and detailed clinical summary.*
 
 ---
 
@@ -181,11 +187,12 @@ pytest tests/ -v
 ├── config.yaml                  # Master hyperparameter configuration
 ├── pyproject.toml               # Package build config & pytest settings
 ├── conftest.py                  # Root pytest path setup
-├── dashboard.py                 # Streamlit entry point
-├── api.py                       # FastAPI application entry point
 ├── requirements.txt             # Dependency graph
 ├── docker-compose.yml           # Service orchestration
 ├── Dockerfile                   # Container image definition
+├── app/                         # Frontend & Backend Applications
+│   ├── dashboard.py             # Streamlit entry point
+│   └── api.py                   # FastAPI application entry point
 ├── neuroscan/                   # Core Package
 │   ├── config_loader.py         # YAML/Env var processor
 │   ├── data_pipeline.py         # tf.data.Dataset orchestrator
@@ -196,6 +203,9 @@ pytest tests/ -v
 │   ├── explainability.py        # Grad-CAM heatmap generation
 │   └── visualizer.py            # Plotly abstractions
 ├── scripts/
+│   ├── evaluate_models.py       # Model evaluation script
+│   ├── generate_synthetic_data.py # Synthetic data generator
+│   ├── kaggle_train_script.py   # Kaggle training script
 │   ├── train_segmenter.py       # Segmentation CLI
 │   ├── train_classifier.py      # Classification CLI
 │   └── convert_tif_to_png.py    # Dataset format conversion utility
@@ -214,3 +224,12 @@ pytest tests/ -v
     ├── test_visualizer.py
     └── test_api.py
 ```
+
+---
+
+## 🚀 Future Improvements
+
+- **3D MRI Support**: Extend the pipeline to process 3D NIfTI volumes instead of 2D slices.
+- **Multimodal Fusion**: Integrate T1, T1Gd, T2, and FLAIR sequences simultaneously for richer feature extraction.
+- **Federated Learning**: Implement federated training to preserve patient data privacy across multiple clinical sites.
+- **Deployment**: Provide Kubernetes Helm charts for scalable enterprise deployment.
