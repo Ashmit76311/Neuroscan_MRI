@@ -1,0 +1,31 @@
+# NeuroScan Configuration
+
+data:
+  # Base dataset directories
+  segmentation_dir: "data/raw/segmentation/"
+  classification_dir: "data/raw/classification/"
+  
+model:
+  segmentation:
+    input_shape: [224, 224, 1]
+    filters: [16, 32, 64, 128, 256]
+    checkpoint_path: "checkpoints/neuroscan_seg.keras"
+  
+  classification:
+    input_shape: [224, 224, 3]
+    classes: ["glioma", "meningioma", "pituitary", "notumor"]
+    checkpoint_path: "checkpoints/neuroscan_cls.keras"
+
+training:
+  segmentation:
+    batch_size: 4
+    learning_rate: 0.0005
+    epochs: 50
+    validation_split: 0.15
+  
+  classification:
+    batch_size: 8
+    learning_rate: 0.0005
+    epochs: 40
+    validation_split: 0.15
+    data_augmentation: true
