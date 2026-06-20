@@ -124,7 +124,7 @@ def generate_gradcam_heatmap(model, img_array, target_class_idx=None,
             "with `run_eagerly=False` or that inputs pass through the target layer."
         )
 
-    # Global-average-pool the gradients over the spatial dimensions
+    # Global-average-pool the gradients over the spatial dimensions:
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))  # shape: (C,)
 
     # Weighted combination of feature maps
