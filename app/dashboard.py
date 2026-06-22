@@ -3,7 +3,11 @@ import numpy as np
 import cv2
 from PIL import Image
 import os
+import sys
 import time
+
+# Ensure project root is in python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from neuroscan.inference import NeuroScanPipeline
 from neuroscan.visualizer import plot_confidence_bar

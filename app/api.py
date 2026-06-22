@@ -7,6 +7,11 @@ import uvicorn
 import io
 import base64
 from PIL import Image
+import os
+import sys
+
+# Ensure project root is in python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from neuroscan.inference import NeuroScanPipeline
 
