@@ -55,9 +55,6 @@ The pipeline takes a raw MRI scan, localizes the region of interest, classifies 
 
 ## 🖥️ Dashboard Preview
 
-![NeuroScan Control Panel](docs/dashboard2.png)
-*Upload an MRI scan to begin the autonomous workflow.*
-
 ![Axial MRI Layer Scan](docs/dashboard4.png)
 *Raw MRI Scan and Segmentation Mask Overlay*
 
