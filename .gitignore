@@ -1,5 +1,7 @@
 venv/
 checkpoints/
+!checkpoints/neuroscan_seg.keras
+!checkpoints/neuroscan_cls.keras
 data/
 __pycache__/
 *.pyc
