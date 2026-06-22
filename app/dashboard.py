@@ -484,6 +484,61 @@ with st.sidebar:
         st.error("❌ Classification Node Offline")
 
 # =====================================================
+# HELPER: OOD / MRI-likeness validator
+# =====================================================
+def validate_mri_image(image_bgr):
+    """
+    Lightweight Out-of-Distribution (OOD) detector.
+    Checks if an image has visual characteristics consistent with brain MRI scans.
+    """
+    failed_checks = []
+    scores = []
+
+    # Check 1: Low color saturation (MRI scans are near-grayscale)
+    hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
+    mean_saturation = float(np.mean(hsv[:, :, 1]))
+    sat_ok = mean_saturation < 30
+    scores.append(1.0 if sat_ok else max(0.0, 1.0 - (mean_saturation - 30) / 120))
+    if not sat_ok:
+        failed_checks.append(f"High color saturation ({mean_saturation:.0f}/255) — MRI scans are grayscale")
+
+    # Check 2: Grayscale channel uniformity (R ≈ G ≈ B for true grayscale)
+    b, g, r = cv2.split(image_bgr.astype(np.float32))
+    channel_diff = (float(np.mean(np.abs(r - g))) + float(np.mean(np.abs(g - b)))) / 2
+    gray_ok = channel_diff < 15
+    scores.append(1.0 if gray_ok else max(0.0, 1.0 - (channel_diff - 15) / 60))
+    if not gray_ok:
+        failed_checks.append(f"Non-uniform color channels (avg diff={channel_diff:.1f}) — MRI scans have equal R/G/B channels")
+
+    # Check 3: Dark background prevalence (MRI background is mostly black)
+    gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+    dark_pixel_ratio = float(np.sum(gray < 30) / gray.size)
+    dark_ok = dark_pixel_ratio > 0.20
+    scores.append(1.0 if dark_ok else dark_pixel_ratio / 0.20)
+    if not dark_ok:
+        failed_checks.append(f"Insufficient dark background ({dark_pixel_ratio*100:.1f}%) — MRI scans have dark surrounds")
+
+    # Check 4: Brightness & contrast range typical of MRI
+    mean_brightness = float(np.mean(gray))
+    std_brightness = float(np.std(gray))
+    brightness_ok = mean_brightness < 160 and std_brightness > 15
+    scores.append(1.0 if brightness_ok else 0.3)
+    if not brightness_ok:
+        if mean_brightness >= 160:
+            failed_checks.append(f"Image too bright (mean={mean_brightness:.0f}) — MRI scans are predominantly dark")
+        if std_brightness <= 15:
+            failed_checks.append(f"Low contrast (std={std_brightness:.1f}) — MRI scans have high contrast tissue boundaries")
+
+    ood_score = float(np.mean(scores))
+    is_valid = len(failed_checks) <= 1 and ood_score >= 0.55
+
+    return {
+        'is_valid_mri': is_valid,
+        'ood_score': ood_score,
+        'failed_checks': failed_checks
+    }
+
+# =====================================================
 # HELPER: Build SVG confidence ring
 # =====================================================
 def build_confidence_card(confidence_pct, latency_ms):
@@ -577,7 +632,7 @@ if page == "🔬 Live Scan":
         open_cv_image = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
         # ——— Step 0: OOD / MRI-likeness validation ———
-        ood_result = pipeline.validate_mri_image(open_cv_image)
+        ood_result = validate_mri_image(open_cv_image)
         ood_score_pct = int(ood_result['ood_score'] * 100)
 
         if not ood_result['is_valid_mri']:
