@@ -86,7 +86,13 @@ def generate_gradcam_heatmap(model, img_array, target_class_idx=None,
             # Forward pass through the head layers (on top of conv_out)
             x = conv_out
             for layer in head_layers:
-                x = layer(x, training=False)
+                if isinstance(layer, tf.keras.layers.Dense) and layer == head_layers[-1]:
+                    # Manually compute dense layer without activation (softmax) to get raw logits
+                    # Softmax causes gradient saturation when confidence is ~100%, leading to empty heatmaps.
+                    w, b = layer.get_weights()
+                    x = tf.matmul(x, w) + b
+                else:
+                    x = layer(x, training=False)
             preds = x  # shape: (1, num_classes)
 
             if target_class_idx is None:
