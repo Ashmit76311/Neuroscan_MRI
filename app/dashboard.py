@@ -369,6 +369,82 @@ st.markdown("""
         font-weight: 700;
         color: #e1e2eb;
     }
+    /* ——— OOD Validation Alert ——— */
+    .ood-alert {
+        background: rgba(255, 100, 80, 0.08);
+        border: 1px solid rgba(255, 100, 80, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem 2rem;
+        margin: 1rem 0 2rem 0;
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+    }
+    .ood-alert-icon {
+        font-size: 36px;
+        flex-shrink: 0;
+        color: #ff6450;
+        margin-top: 2px;
+    }
+    .ood-alert-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #ff8a80;
+        margin-bottom: 0.4rem;
+    }
+    .ood-alert-body {
+        font-family: 'Geist', sans-serif;
+        font-size: 13px;
+        color: rgba(225, 226, 235, 0.7);
+        line-height: 1.7;
+    }
+    .ood-check-fail {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 100, 80, 0.1);
+        border: 1px solid rgba(255, 100, 80, 0.2);
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 11px;
+        color: #ffab99;
+        font-family: 'Geist', sans-serif;
+        font-weight: 600;
+        margin: 3px 4px 3px 0;
+    }
+    .ood-score-bar {
+        height: 6px;
+        border-radius: 99px;
+        background: rgba(255,255,255,0.05);
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+    .ood-score-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #ff6450, #ff9a3c);
+        transition: width 0.5s ease;
+    }
+    /* ——— Low-confidence warning ——— */
+    .conf-warning {
+        background: rgba(255, 180, 0, 0.07);
+        border: 1px solid rgba(255, 180, 0, 0.25);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: 'Geist', sans-serif;
+        font-size: 13px;
+        color: rgba(255, 210, 100, 0.9);
+    }
+    .conf-warning .material-symbols-outlined {
+        color: #ffd264;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -500,6 +576,36 @@ if page == "🔬 Live Scan":
         pil_img = Image.open(uploaded_file)
         open_cv_image = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
+        # ——— Step 0: OOD / MRI-likeness validation ———
+        ood_result = pipeline.validate_mri_image(open_cv_image)
+        ood_score_pct = int(ood_result['ood_score'] * 100)
+
+        if not ood_result['is_valid_mri']:
+            fail_tags = ''.join(
+                f'<span class="ood-check-fail"><span class="material-symbols-outlined" style="font-size:13px;">cancel</span>{check}</span>'
+                for check in ood_result['failed_checks']
+            )
+            st.markdown(f"""
+            <div class="ood-alert">
+                <span class="material-symbols-outlined ood-alert-icon">warning</span>
+                <div>
+                    <div class="ood-alert-title">⚠ Invalid Input — Image Does Not Appear to Be an MRI Scan</div>
+                    <div class="ood-alert-body">
+                        The uploaded image failed {len(ood_result['failed_checks'])} MRI-likeness check(s).
+                        This model was trained exclusively on brain MRI scans. Running inference on non-MRI
+                        images will produce meaningless results.<br><br>
+                        <b>Failed checks:</b><br>
+                        {fail_tags}
+                        <div class="ood-score-bar" style="margin-top:1rem;">
+                            <div class="ood-score-fill" style="width:{ood_score_pct}%"></div>
+                        </div>
+                        <div style="font-size:11px;color:rgba(141,144,159,0.5);margin-top:4px;">MRI Likeness Score: {ood_score_pct}% (threshold: 55%)</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.stop()
+
         # Animated progress bar
         progress_bar = st.progress(0, text="Initializing Neural Pipeline...")
         time.sleep(0.4)
@@ -521,8 +627,22 @@ if page == "🔬 Live Scan":
 
         confidence_pct = results['confidence'] * 100
         pred_class = results['pred_class']
+        below_threshold = results.get('below_threshold', False)
 
         st.markdown("---")
+
+        # ——— Confidence threshold warning banner ———
+        if below_threshold:
+            threshold_pct = int(results.get('confidence_threshold', 0.70) * 100)
+            st.markdown(f"""
+            <div class="conf-warning">
+                <span class="material-symbols-outlined">info</span>
+                <span><b>Low Diagnostic Confidence ({confidence_pct:.1f}%)</b> — The model's best prediction is below the
+                {threshold_pct}% confidence threshold. The image may be ambiguous, low quality,
+                or an edge case. Treat this result with clinical caution and do not use for diagnosis.
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
 
         # ——— Results Bento Grid: Pathology + Confidence ———
         col_path, col_conf = st.columns(2, gap="large")

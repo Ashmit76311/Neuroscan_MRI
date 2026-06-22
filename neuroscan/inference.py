@@ -3,6 +3,9 @@ import numpy as np
 import tensorflow as tf
 from .config_loader import config
 
+# Confidence threshold below which results are flagged as unreliable
+CONFIDENCE_THRESHOLD = 0.70
+
 class NeuroScanPipeline:
     def __init__(self, seg_model_path=None, cls_model_path=None):
         self.config = config
@@ -27,6 +30,74 @@ class NeuroScanPipeline:
             print("Loaded classification model.")
         except Exception as e:
             print(f"Warning: Could not load classification model: {e}")
+
+    @staticmethod
+    def validate_mri_image(image_bgr):
+        """
+        Lightweight Out-of-Distribution (OOD) detector.
+        Checks if an image has visual characteristics consistent with brain MRI scans.
+
+        Args:
+            image_bgr (np.ndarray): Input image in BGR format.
+
+        Returns:
+            dict: {
+                'is_valid_mri': bool,
+                'confidence_score': float (0-1, higher = more MRI-like),
+                'failed_checks': list[str]  # human-readable reasons for failure
+            }
+        """
+        failed_checks = []
+        scores = []
+
+        # --- Check 1: Low color saturation (MRI scans are near-grayscale) ---
+        hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
+        mean_saturation = float(np.mean(hsv[:, :, 1]))
+        # MRI images typically have saturation < 20 (out of 255)
+        sat_ok = mean_saturation < 30
+        scores.append(1.0 if sat_ok else max(0.0, 1.0 - (mean_saturation - 30) / 120))
+        if not sat_ok:
+            failed_checks.append(f"High color saturation ({mean_saturation:.0f}/255) — MRI scans are grayscale")
+
+        # --- Check 2: Grayscale channel uniformity (R ≈ G ≈ B for true grayscale) ---
+        b, g, r = cv2.split(image_bgr.astype(np.float32))
+        rg_diff = float(np.mean(np.abs(r - g)))
+        gb_diff = float(np.mean(np.abs(g - b)))
+        channel_diff = (rg_diff + gb_diff) / 2
+        gray_ok = channel_diff < 15
+        scores.append(1.0 if gray_ok else max(0.0, 1.0 - (channel_diff - 15) / 60))
+        if not gray_ok:
+            failed_checks.append(f"Non-uniform color channels (avg diff={channel_diff:.1f}) — MRI scans have equal R/G/B channels")
+
+        # --- Check 3: Dark background prevalence (MRI background is mostly black) ---
+        gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
+        dark_pixel_ratio = float(np.sum(gray < 30) / gray.size)
+        # MRI scans typically have >25% dark/black background pixels
+        dark_ok = dark_pixel_ratio > 0.20
+        scores.append(1.0 if dark_ok else dark_pixel_ratio / 0.20)
+        if not dark_ok:
+            failed_checks.append(f"Insufficient dark background ({dark_pixel_ratio*100:.1f}%) — MRI scans have dark surrounds")
+
+        # --- Check 4: Reasonable image brightness range (MRI has high contrast) ---
+        mean_brightness = float(np.mean(gray))
+        std_brightness = float(np.std(gray))
+        # MRI images are typically dark overall (mean < 120) with decent contrast (std > 20)
+        brightness_ok = mean_brightness < 160 and std_brightness > 15
+        scores.append(1.0 if brightness_ok else 0.3)
+        if not brightness_ok:
+            if mean_brightness >= 160:
+                failed_checks.append(f"Image too bright (mean={mean_brightness:.0f}) — MRI scans are predominantly dark")
+            if std_brightness <= 15:
+                failed_checks.append(f"Low contrast (std={std_brightness:.1f}) — MRI scans have high contrast tissue boundaries")
+
+        ood_score = float(np.mean(scores))  # 0 = definitely not MRI, 1 = looks like MRI
+        is_valid = len(failed_checks) <= 1 and ood_score >= 0.55
+
+        return {
+            'is_valid_mri': is_valid,
+            'ood_score': ood_score,
+            'failed_checks': failed_checks
+        }
 
     def process_image(self, image_bgr):
         """
@@ -93,6 +164,9 @@ class NeuroScanPipeline:
             heatmap = None
             heatmap_overlay = None
         
+        # 5. Confidence threshold gate
+        below_threshold = confidence < CONFIDENCE_THRESHOLD
+
         return {
             "mask": binary_mask,
             "overlay": cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), # Convert to RGB for UI
@@ -101,5 +175,7 @@ class NeuroScanPipeline:
             "confidence": confidence,
             "probabilities": {cls: float(prob) for cls, prob in zip(self.classes, pred_probs)},
             "gradcam_heatmap": heatmap,
-            "gradcam_overlay": heatmap_overlay
+            "gradcam_overlay": heatmap_overlay,
+            "below_threshold": below_threshold,
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
         }
