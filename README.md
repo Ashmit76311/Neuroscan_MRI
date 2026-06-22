@@ -68,10 +68,9 @@ The pipeline takes a raw MRI scan, localizes the region of interest, classifies 
 *Confidence probability distribution and detailed clinical summary.*
 
 ---
-## Live Demo:
+## 🚀 Live Demo
 
-[Live Demo](https://neuroscan-analytics.streamlit.app/)
-
+**Check out the live dashboard:** [NeuroScan Analytics Dashboard](https://neuroscan-analytics.streamlit.app/)
 ---
 
 ## 🌟 Core Features
