@@ -68,7 +68,11 @@ The pipeline takes a raw MRI scan, localizes the region of interest, classifies 
 *Confidence probability distribution and detailed clinical summary.*
 
 ---
+## Live Demo:
 
+[Live Demo](https://neuroscan-analytics.streamlit.app/)
+
+---
 ## 🌟 Core Features
 
 - **Segmentation (Attention U-Net)**: A custom SeparableConv2D-based U-Net (224×224 resolution) enhanced with Attention Gates to focus on tumor regions of varying shapes and sizes. Trained with a combined BCE + Dice Loss to handle class imbalance between tumor and background pixels.
